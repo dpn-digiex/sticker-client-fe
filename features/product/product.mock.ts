@@ -7,13 +7,12 @@ export const HOME_CATEGORIES: CategoryListResponse[] = [
     name: "Outfit & Doll",
     slug: "outfit-doll",
     description: "Doll, outfit và phụ kiện dễ thương",
-    image: "/images/categories/doll.jpg",
+    images: ["/images/categories/doll.jpg"],
     created_at: "2024-01-01",
     updated_at: "2024-01-01",
     products: [
       {
         id: "prd_001",
-        sku: "DOLL-SEONGHYEON",
         name: "[SEONGHYEON] Yom Miomiao",
         slug: "seonghyeon-yom-miomiao",
         category_id: "cat_doll",
@@ -38,7 +37,6 @@ export const HOME_CATEGORIES: CategoryListResponse[] = [
       },
       {
         id: "prd_002",
-        sku: "DOLL-NIKI",
         name: "[NI-KI] Doll Outfit",
         slug: "niki-doll-outfit",
         category_id: "cat_doll",
@@ -66,13 +64,12 @@ export const HOME_CATEGORIES: CategoryListResponse[] = [
     name: "Merch",
     slug: "merch",
     description: "Sticker, badge, goods chính hãng",
-    image: "/images/categories/merch.jpg",
+    images: ["/images/categories/merch.jpg"],
     created_at: "2024-01-01",
     updated_at: "2024-01-01",
     products: [
       {
         id: "prd_010",
-        sku: "CORTIS-STICKER",
         name: "[CORTIS] Sticker trong suốt",
         slug: "cortis-sticker-trong-suot",
         category_id: "cat_merch",
@@ -100,13 +97,12 @@ export const HOME_CATEGORIES: CategoryListResponse[] = [
     name: "Khác",
     slug: "other",
     description: "Order theo yêu cầu, quà tặng handmade",
-    image: "/images/categories/other.jpg",
+    images: ["/images/categories/other.jpg"],
     created_at: "2024-01-01",
     updated_at: "2024-01-01",
     products: [
       {
         id: "prd_020",
-        sku: "CUSTOM-ORDER",
         name: "Order theo yêu cầu",
         slug: "order-theo-yeu-cau",
         category_id: "cat_other",

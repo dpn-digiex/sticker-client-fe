@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
-import type { Product, Variant } from "@/types/product"; // chỉnh path đúng project bạn
-import VariantSelector from "@/components/common/variant-selector";
-import AddToCartBar from "@/components/common/add-to-cart-bar";
+import type { Product, Variant } from "@/types/product";
+import ProductCartControls from "@/components/common/ProductCartControls";
 
 // ✅ mock fetch (thay bằng product.api.ts của bạn sau)
 async function getProductBySlug(slug: string): Promise<{
@@ -14,7 +13,6 @@ async function getProductBySlug(slug: string): Promise<{
   // TODO: replace with real API call
   const product: Product = {
     id: "prd_002",
-    sku: "DOLL-NIKI",
     name: "[NI-KI] Nilili 尼粒粒",
     slug,
     category_id: "cat_doll",
@@ -42,7 +40,6 @@ async function getProductBySlug(slug: string): Promise<{
     {
       id: "var_1",
       product_id: product.id,
-      sku: "DOLL-NIKI-A",
       name: "Full set",
       description: "Bao gồm doll + phụ kiện",
       price: 0,
@@ -55,7 +52,6 @@ async function getProductBySlug(slug: string): Promise<{
     {
       id: "var_2",
       product_id: product.id,
-      sku: "DOLL-NIKI-B",
       name: "Only doll",
       description: "Chỉ doll",
       price: -20000,
@@ -83,7 +79,6 @@ async function getRelatedProductsByCategory(
   const related: Product[] = [
     {
       id: "prd_rel_1",
-      sku: "DOLL-NIKI-DUCK",
       name: "[NI-KI] Nishimura Duck 尼西木鸭",
       slug: "niki-nishimura-duck",
       category_id: categoryId,
@@ -309,16 +304,12 @@ export default async function ProductDetailPage({
               </dl>
             </div>
 
-            {/* Variant selector (CLIENT) */}
-            <div className="rounded-2xl border border-border bg-card p-5">
-              <h2 className="text-sm font-semibold text-foreground mb-3">
-                Phân loại
-              </h2>
-              <VariantSelector variants={variants} basePrice={product.price} />
-            </div>
-
-            {/* Add to cart (CLIENT) */}
-            <AddToCartBar product={product} variants={variants} />
+            {/* Variant selector & Add to cart (CLIENT) */}
+            <ProductCartControls
+              product={product}
+              variants={variants}
+              basePrice={product.price}
+            />
           </section>
         </div>
 
@@ -402,7 +393,6 @@ export default async function ProductDetailPage({
               "@context": "https://schema.org",
               "@type": "Product",
               name: product.name,
-              sku: product.sku,
               image: product.images,
               offers: {
                 "@type": "Offer",
