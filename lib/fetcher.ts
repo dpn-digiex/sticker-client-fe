@@ -13,7 +13,7 @@ export const apiClient: AxiosInstance = axios.create({
 
 // Request interceptor
 apiClient.interceptors.request.use(
-  (config) => {
+  config => {
     // Add auth token if available
     // const token = getToken();
     // if (token) {
@@ -21,14 +21,14 @@ apiClient.interceptors.request.use(
     // }
     return config;
   },
-  (error) => {
+  error => {
     return Promise.reject(error);
   }
 );
 
 // Response interceptor
 apiClient.interceptors.response.use(
-  (response) => response,
+  response => response,
   (error: AxiosError) => {
     // Handle common errors
     if (error.response?.status === 401) {

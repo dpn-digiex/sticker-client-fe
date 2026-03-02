@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { HOME_CATEGORIES } from "@/features/product/product.mock";
 import Link from "next/link";
-import Image from "next/image";
+import { homepageApi } from "@/features/homepage/homepage.api";
+import type { HomepageCategory } from "@/features/homepage/homepage.types";
+import { ProductCarousel } from "@/components/common/ProductCarousel";
 
 export const metadata: Metadata = {
   title: "Dango's Corner – Order K-pop, Doll & Handmade Merch",
@@ -26,7 +27,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+const PLACEHOLDER_IMAGE =
+  "https://d20m1ujgrryo2d.cloudfront.net/placeholder.png";
+
+export default async function HomePage() {
+  let categories: HomepageCategory[];
+  try {
+    categories = await homepageApi.getHomepage();
+  } catch (error) {
+    console.error("error", error);
+    categories = [];
+  }
+
   return (
     <main className="bg-background">
       {/* HERO / SEARCH */}
@@ -54,17 +66,14 @@ export default function HomePage() {
           />
         </form>
       </section>
-      {HOME_CATEGORIES.map((category) => (
+      {categories.map(category => (
         <section
           key={category.id}
-          className="container mx-auto px-4 py-12"
+          className="container mx-auto p-8"
           aria-labelledby={category.slug}
         >
           <div className="flex items-center justify-between mb-6">
-            <h2
-              id={category.slug}
-              className="text-2xl font-semibold"
-            >
+            <h2 id={category.slug} className="text-2xl font-semibold">
               {category.name}
             </h2>
 
@@ -76,36 +85,12 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* Slider/Grid */}
-          <div className="flex gap-4 overflow-x-auto">
-            {category.products.map((product) => (
-              <article
-                key={product.id}
-                className="min-w-[180px] rounded-xl bg-card p-3"
-              >
-                <Link href={`/products/${product.slug}`}>
-                  <Image
-                    src={product.images[0]}
-                    alt={product.name}
-                    width={200}
-                    height={200}
-                    className="rounded-lg object-cover"
-                  />
-
-                  <h3 className="mt-2 text-sm font-medium">
-                    {product.name}
-                  </h3>
-
-                  <p className="mt-1 text-sm text-primary">
-                    {product.price.toLocaleString()}đ
-                  </p>
-                </Link>
-              </article>
-            ))}
-          </div>
+          <ProductCarousel
+            products={category.products}
+            placeholderImage={PLACEHOLDER_IMAGE}
+          />
         </section>
       ))}
     </main>
   );
 }
-
