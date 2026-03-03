@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { homepageApi } from "@/features/homepage/homepage.api";
+import { fetchHomepage } from "@/features/homepage/homepage.api";
 import type { HomepageCategory } from "@/features/homepage/homepage.types";
 import { ProductCarousel } from "@/components/common/ProductCarousel";
 import { ROUTES } from "@/lib/constants";
@@ -34,7 +34,9 @@ const PLACEHOLDER_IMAGE =
 export default async function HomePage() {
   let categories: HomepageCategory[];
   try {
-    categories = await homepageApi.getHomepage();
+    categories = await fetchHomepage({
+      next: { revalidate: 60 }, // 1 minute
+    });
   } catch (error) {
     console.error("error", error);
     categories = [];
