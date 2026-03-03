@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import type { HomepageProduct } from "@/features/homepage/homepage.types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ROUTES } from "@/lib/constants";
 
 interface ProductCarouselProps {
   products: HomepageProduct[];
@@ -76,7 +77,7 @@ export function ProductCarousel({
             key={product._id}
             className="min-w-[180px] w-[180px] flex-shrink-0 rounded-xl bg-card p-3"
           >
-            <Link href={`/products/${product.slug}`} className="block">
+            <Link href={`${ROUTES.PRODUCT}/${product.slug}`} className="block">
               <div className="relative w-full aspect-square overflow-hidden rounded-lg bg-muted">
                 <Image
                   src={product.thumbnail || placeholderImage}

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { homepageApi } from "@/features/homepage/homepage.api";
 import type { HomepageCategory } from "@/features/homepage/homepage.types";
 import { ProductCarousel } from "@/components/common/ProductCarousel";
+import { ROUTES } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Dango's Corner – Order K-pop, Doll & Handmade Merch",
@@ -54,7 +55,7 @@ export default async function HomePage() {
 
         {/* Search (indexable placeholder) */}
         <form
-          action="/products"
+          action={ROUTES.PRODUCT}
           className="mt-8 flex justify-center"
           role="search"
         >
@@ -78,7 +79,7 @@ export default async function HomePage() {
             </h2>
 
             <Link
-              href={`/products?category=${category.slug}`}
+              href={`${ROUTES.PRODUCT}?category=${category.slug}`}
               className="text-sm nav-link"
             >
               Xem thêm →
