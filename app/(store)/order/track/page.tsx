@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import TrackOrderForm from "./TrackOrderForm";
 
 export const metadata: Metadata = {
@@ -30,7 +31,17 @@ export default function TrackOrderPage() {
         </p>
 
         <div className="mt-10">
-          <TrackOrderForm />
+          <Suspense
+            fallback={
+              <div className="mx-auto w-full max-w-xl animate-pulse rounded-2xl border border-border bg-card p-6 md:p-8">
+                <div className="h-5 w-24 rounded bg-muted" />
+                <div className="mt-2 h-11 rounded-xl bg-muted" />
+                <div className="mt-5 h-12 w-full rounded-2xl bg-muted" />
+              </div>
+            }
+          >
+            <TrackOrderForm />
+          </Suspense>
         </div>
       </section>
     </main>
