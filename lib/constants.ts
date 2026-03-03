@@ -46,11 +46,40 @@ export const PAYMENT_METHOD = {
   ZALOPAY: "zalopay",
 } as const;
 
+export const ROUTES = {
+  HOME: "/",
+  LOGIN: "/login",
+  REGISTER: "/register",
+  PRODUCT: "/product",
+  PRODUCT_DETAIL: "/product/:slug",
+  CART: "/cart",
+  CHECKOUT: "/checkout",
+  CAMPAIGNS: "/campaigns",
+  POLICY: "/policy",
+  CONTACT: "/contact",
+  ORDER_TRACK: "/order/track",
+  ADMIN: "/admin",
+  USER: "/user",
+};
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: "Sản phẩm", href: "/products" },
-  { label: "Đăng bán", href: "/campaigns" }, 
-  { label: "Chính sách", href: "/policy" },  
-  { label: "Thông tin", href: "/contact" },   
-  { label: "Tra đơn", href: "/order/track" },
+  { label: "Sản phẩm", href: ROUTES.PRODUCT },
+  { label: "Đăng bán", href: ROUTES.CAMPAIGNS },
+  { label: "Chính sách", href: ROUTES.POLICY },
+  { label: "Thông tin", href: ROUTES.CONTACT },
+  { label: "Tra đơn", href: ROUTES.ORDER_TRACK },
 ];
+
+export const API_ENDPOINTS = {
+  PRODUCT: "/products",
+  PRODUCT_DETAIL: "/products/slug",
+  CART: "/cart",
+  CHECKOUT: "/checkout",
+  CAMPAIGNS: "/campaigns",
+  POLICY: "/policy",
+  CONTACT: "/contact",
+  ORDER_TRACK: "/order/track",
+};
+
+export const PLACEHOLDER_IMAGE =
+  "https://d20m1ujgrryo2d.cloudfront.net/placeholder.png";
