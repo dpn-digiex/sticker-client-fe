@@ -1,106 +1,22 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
-import type { Product, Variant } from "@/types/product";
+import type { Product } from "@/types/product";
 import ProductCartControls from "@/components/common/ProductCartControls";
-
-// ✅ mock fetch (thay bằng product.api.ts của bạn sau)
-async function getProductBySlug(slug: string): Promise<{
-  product: Product;
-  variants: Variant[];
-}> {
-  // TODO: replace with real API call
-  const product: Product = {
-    id: "prd_002",
-    name: "[NI-KI] Nilili 尼粒粒",
-    slug,
-    category_id: "cat_doll",
-    product_type: "preorder",
-    price: 210000,
-    currency: "VND",
-    price_note: "Chưa full phí",
-    shipping_note: null,
-    stock: 999,
-    seller_name: "Nimilya (xhs)",
-    size_description: "10cm - body in đầu to",
-    package_description: "1 only doll",
-    preorder_description: "3–4 tháng",
-    images: [
-      "https://i.imgur.com/3REtmaR.jpeg",
-      "https://i.imgur.com/3REtmaR.jpeg",
-    ],
-    view_count: 32,
-    preorder: { start_date: "2024-03-01", end_date: "2024-03-10" },
-    created_at: "2024-02-02",
-    updated_at: "2024-02-02",
-  };
-
-  const variants: Variant[] = [
-    {
-      id: "var_1",
-      product_id: product.id,
-      name: "Full set",
-      description: "Bao gồm doll + phụ kiện",
-      price: 0,
-      stock: 999,
-      images: null,
-      display_order: 1,
-      created_at: "2024-02-02",
-      updated_at: "2024-02-02",
-    },
-    {
-      id: "var_2",
-      product_id: product.id,
-      name: "Only doll",
-      description: "Chỉ doll",
-      price: -20000,
-      stock: 999,
-      images: null,
-      display_order: 2,
-      created_at: "2024-02-02",
-      updated_at: "2024-02-02",
-    },
-  ];
-
-  return {
-    product,
-    variants: variants.sort((a, b) => a.display_order - b.display_order),
-  };
-}
+import { PreorderCountdown } from "@/components/common/PreorderCountdown";
+import { ProductImageSlider } from "@/components/common/ProductImageSlider";
+import { productApi } from "@/features/product/product.api";
+import { PLACEHOLDER_IMAGE, ROUTES } from "@/lib/constants";
 
 async function getRelatedProductsByCategory(
   categoryId: string | null,
-  excludeProductId: string
+  _excludeProductId: string
 ): Promise<Product[]> {
   if (!categoryId) return [];
-
-  // TODO: replace with real API call
-  const related: Product[] = [
-    {
-      id: "prd_rel_1",
-      name: "[NI-KI] Nishimura Duck 尼西木鸭",
-      slug: "niki-nishimura-duck",
-      category_id: categoryId,
-      product_type: "preorder",
-      price: 236000,
-      currency: "VND",
-      price_note: null,
-      shipping_note: null,
-      stock: 0,
-      seller_name: null,
-      size_description: null,
-      package_description: null,
-      preorder_description: null,
-      images: ["https://i.imgur.com/3REtmaR.jpeg"],
-      view_count: 12,
-      preorder: { start_date: "2024-02-01", end_date: "2024-02-05" }, // hết hạn
-      created_at: "2024-02-01",
-      updated_at: "2024-02-01",
-    },
-  ];
-
-  return related.filter(p => p.id !== excludeProductId).slice(0, 10);
+  // TODO: replace with real API when list-by-category or related endpoint exists
+  return [];
 }
 
 function isPreorderExpired(p: Product) {
@@ -124,9 +40,16 @@ function formatVND(amount: number) {
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { product } = await getProductBySlug(params.slug);
+  const { slug } = await params;
+  let result;
+  try {
+    result = await productApi.getProductBySlug(slug);
+  } catch {
+    return { title: "Product Not Found" };
+  }
+  const { product } = result;
 
   const title = `${product.name} – Dango Corner`;
   const description =
@@ -139,7 +62,7 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
-      canonical: `/products/${product.slug}`,
+      canonical: `${ROUTES.PRODUCT}/${product.slug}`,
     },
     openGraph: {
       title,
@@ -153,9 +76,16 @@ export async function generateMetadata({
 export default async function ProductDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const { product, variants } = await getProductBySlug(params.slug);
+  const { slug } = await params;
+  let result;
+  try {
+    result = await productApi.getProductBySlug(slug);
+  } catch {
+    notFound();
+  }
+  const { product, variants } = result!;
 
   const relatedProducts = await getRelatedProductsByCategory(
     product.category_id,
@@ -164,13 +94,22 @@ export default async function ProductDetailPage({
 
   const isPreorder = product.product_type === "preorder";
 
+  const isIncludedDescription =
+    product.size_description ||
+    product.package_description ||
+    product.preorder_description ||
+    product.shipping_note;
+
+  const isShowPreorderCountdown =
+    isPreorder && product.preorder?.start_date && product.preorder?.end_date;
+
   return (
     <main className="bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb / Back */}
         <div className="mb-6">
           <Link
-            href="/products"
+            href={ROUTES.PRODUCT}
             className="nav-link inline-flex items-center gap-2"
           >
             ← Quay lại
@@ -183,35 +122,11 @@ export default async function ProductDetailPage({
             aria-label="Hình ảnh sản phẩm"
             className="rounded-2xl border border-border bg-card p-4"
           >
-            <div className="relative aspect-square overflow-hidden rounded-xl">
-              <Image
-                src={product.images[0]}
-                alt={product.name}
-                fill
-                priority
-                className="object-cover"
-              />
-            </div>
-
-            {/* thumbs (SEO-friendly: still images) */}
-            {product.images.length > 1 && (
-              <div className="mt-4 flex gap-3 overflow-x-auto">
-                {product.images.map((src, idx) => (
-                  <div
-                    key={`${src}-${idx}`}
-                    className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border"
-                    aria-label={`Ảnh ${idx + 1}`}
-                  >
-                    <Image
-                      src={src}
-                      alt={`${product.name} - ${idx + 1}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            <ProductImageSlider
+              images={product.images ?? []}
+              productName={product.name}
+              placeholderImage={PLACEHOLDER_IMAGE}
+            />
           </section>
 
           {/* RIGHT: Info */}
@@ -258,51 +173,63 @@ export default async function ProductDetailPage({
               </div>
             </div>
 
-            {/* details table */}
-            <div className="rounded-2xl border border-border bg-card">
-              <div className="border-b border-border px-5 py-4">
-                <h2 className="text-sm font-semibold text-foreground">Mô tả</h2>
-              </div>
+            {/* preorder countdown */}
+            {isShowPreorderCountdown && (
+              <PreorderCountdown
+                endDate={product.preorder?.end_date ?? ""}
+                startDate={product.preorder?.start_date ?? ""}
+              />
+            )}
 
-              <dl className="divide-y divide-border">
-                {product.size_description && (
-                  <div className="grid grid-cols-3 gap-4 px-5 py-4">
-                    <dt className="text-sm text-muted-foreground">
-                      Kích thước
-                    </dt>
-                    <dd className="col-span-2 text-sm text-foreground">
-                      {product.size_description}
-                    </dd>
-                  </div>
-                )}
-                {product.package_description && (
-                  <div className="grid grid-cols-3 gap-4 px-5 py-4">
-                    <dt className="text-sm text-muted-foreground">Bao gồm</dt>
-                    <dd className="col-span-2 text-sm text-foreground">
-                      {product.package_description}
-                    </dd>
-                  </div>
-                )}
-                {product.preorder_description && (
-                  <div className="grid grid-cols-3 gap-4 px-5 py-4">
-                    <dt className="text-sm text-muted-foreground">
-                      Thời gian SX
-                    </dt>
-                    <dd className="col-span-2 text-sm text-foreground">
-                      {product.preorder_description}
-                    </dd>
-                  </div>
-                )}
-                {product.shipping_note && (
-                  <div className="grid grid-cols-3 gap-4 px-5 py-4">
-                    <dt className="text-sm text-muted-foreground">Ghi chú</dt>
-                    <dd className="col-span-2 text-sm text-foreground">
-                      {product.shipping_note}
-                    </dd>
-                  </div>
-                )}
-              </dl>
-            </div>
+            {/* details table */}
+            {isIncludedDescription && (
+              <div className="rounded-2xl border border-border bg-card">
+                <div className="border-b border-border px-5 py-4">
+                  <h2 className="text-sm font-semibold text-foreground">
+                    Mô tả
+                  </h2>
+                </div>
+
+                <dl className="divide-y divide-border">
+                  {product.size_description && (
+                    <div className="grid grid-cols-3 gap-4 px-5 py-4">
+                      <dt className="text-sm text-muted-foreground">
+                        Kích thước
+                      </dt>
+                      <dd className="col-span-2 text-sm text-foreground">
+                        {product.size_description}
+                      </dd>
+                    </div>
+                  )}
+                  {product.package_description && (
+                    <div className="grid grid-cols-3 gap-4 px-5 py-4">
+                      <dt className="text-sm text-muted-foreground">Bao gồm</dt>
+                      <dd className="col-span-2 text-sm text-foreground">
+                        {product.package_description}
+                      </dd>
+                    </div>
+                  )}
+                  {product.preorder_description && (
+                    <div className="grid grid-cols-3 gap-4 px-5 py-4">
+                      <dt className="text-sm text-muted-foreground">
+                        Thời gian SX
+                      </dt>
+                      <dd className="col-span-2 text-sm text-foreground">
+                        {product.preorder_description}
+                      </dd>
+                    </div>
+                  )}
+                  {product.shipping_note && (
+                    <div className="grid grid-cols-3 gap-4 px-5 py-4">
+                      <dt className="text-sm text-muted-foreground">Ghi chú</dt>
+                      <dd className="col-span-2 text-sm text-foreground">
+                        {product.shipping_note}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+            )}
 
             {/* Variant selector & Add to cart (CLIENT) */}
             <ProductCartControls
@@ -319,7 +246,7 @@ export default async function ProductDetailPage({
             Xem thêm sản phẩm khác
           </h2>
           <div className="mt-4">
-            <Link href="/products" className="nav-link">
+            <Link href={ROUTES.PRODUCT} className="nav-link">
               Đi đến danh sách sản phẩm →
             </Link>
           </div>
@@ -344,13 +271,13 @@ export default async function ProductDetailPage({
                 return (
                   <Link
                     key={p.id}
-                    href={`/products/${p.slug}`}
+                    href={`${ROUTES.PRODUCT}/${p.slug}`}
                     className="group relative min-w-[220px] max-w-[220px] rounded-2xl border border-border bg-card p-3 transition hover:border-primary/40"
                   >
                     {/* image */}
                     <div className="relative aspect-square overflow-hidden rounded-xl">
                       <Image
-                        src={p.images?.[0] ?? "/images/placeholder.png"}
+                        src={p.images?.[0] ?? PLACEHOLDER_IMAGE}
                         alt={p.name}
                         fill
                         sizes="220px"
@@ -402,7 +329,7 @@ export default async function ProductDetailPage({
                   product.stock > 0
                     ? "https://schema.org/InStock"
                     : "https://schema.org/OutOfStock",
-                url: `/products/${product.slug}`,
+                url: `${ROUTES.PRODUCT}/${product.slug}`,
               },
             }),
           }}

@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
         hostname: "i.imgur.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "d20m1ujgrryo2d.cloudfront.net",
+        pathname: "/**",
+      },
     ],
   },
 };

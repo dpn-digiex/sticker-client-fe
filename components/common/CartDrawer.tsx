@@ -20,6 +20,7 @@ import { useCartStore } from "@/stores/cart.store";
 import type { CartItem } from "@/types/cart";
 import { formatVND } from "@/stores/cart.store";
 import { cn } from "@/lib/utils";
+import { ROUTES } from "@/lib/constants";
 
 export function CartDrawer({
   trigger,
@@ -159,7 +160,7 @@ function CartLineItem({
     <div className="rounded-2xl border border-border bg-card p-3">
       <div className="flex items-start gap-4">
         <Link
-          href={`/products/${item.productId}`}
+          href={`${ROUTES.PRODUCT}/${item.slug}`}
           onClick={onNavigate}
           className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-border"
           aria-label={item.productName ?? "Sản phẩm"}
