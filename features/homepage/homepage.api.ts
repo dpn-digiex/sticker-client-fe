@@ -1,3 +1,4 @@
+import { API_ENDPOINTS } from "@/lib/constants";
 import type { HomepageApiResponse, HomepageCategory } from "./homepage.types";
 
 /** Next.js fetch cache options (use from Server Components only). */
@@ -14,7 +15,7 @@ export async function fetchHomepage(
   options?: HomepageFetchOptions
 ): Promise<HomepageCategory[]> {
   const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-  const url = `${base.replace(/\/$/, "")}/homepage`;
+  const url = `${base}${API_ENDPOINTS.HOMEPAGE}`;
   const res = await fetch(url, {
     headers: { "Content-Type": "application/json" },
     next: options?.next,

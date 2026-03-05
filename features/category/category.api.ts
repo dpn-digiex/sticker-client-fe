@@ -15,7 +15,6 @@ export async function fetchCategoryBySlug(
 ): Promise<Category | null> {
   const base = process.env.NEXT_PUBLIC_API_URL;
   const url = `${base}${API_ENDPOINTS.CATEGORY_BY_SLUG}/${encodeURIComponent(slug)}`;
-  console.log("123url", url);
   const res = await fetch(url, {
     headers: { "Content-Type": "application/json" },
     next: options?.next,
