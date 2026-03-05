@@ -62,7 +62,6 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
     id: "vpbank",
     label: "VPBank",
     value: "VPBank - STK: 0123456789 - NGUYEN VAN A",
-    highlight: true,
   },
   {
     id: "momo",

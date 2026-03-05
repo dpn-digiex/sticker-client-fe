@@ -18,11 +18,10 @@ interface ProductImageSliderProps {
 export function ProductImageSlider({
   images,
   productName,
-  placeholderImage = PLACEHOLDER_IMAGE,
 }: ProductImageSliderProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const sources = images?.length ? images : [placeholderImage];
-  const currentSrc = sources[activeIndex] ?? placeholderImage;
+  const sources = images?.length ? images : [PLACEHOLDER_IMAGE];
+  const currentSrc = sources[activeIndex] ?? PLACEHOLDER_IMAGE;
   const hasMultiple = sources.length > 1;
 
   const goPrev = useCallback(() => {
@@ -91,7 +90,7 @@ export function ProductImageSlider({
               aria-current={activeIndex === idx ? "true" : undefined}
             >
               <Image
-                src={src}
+                src={src || PLACEHOLDER_IMAGE}
                 alt={`${productName} - ${idx + 1}`}
                 fill
                 className="object-cover"

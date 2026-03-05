@@ -81,7 +81,7 @@ export default async function HomePage() {
             </h2>
 
             <Link
-              href={`${ROUTES.PRODUCT}?category=${category.slug}`}
+              href={`${ROUTES.CATEGORY}/${category.slug}`}
               className="text-sm nav-link"
             >
               Xem thêm →

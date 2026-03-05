@@ -125,7 +125,6 @@ export default async function ProductDetailPage({
             <ProductImageSlider
               images={product.images ?? []}
               productName={product.name}
-              placeholderImage={PLACEHOLDER_IMAGE}
             />
           </section>
 
