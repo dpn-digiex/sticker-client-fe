@@ -1,117 +1,92 @@
 "use client";
 
-import { useCallback, useRef, useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
+import { useRef, useState } from "react";
+import { ProductCard } from "@/components/common/ProductCard";
 import type { HomepageProduct } from "@/features/homepage/homepage.types";
+import { Swiper, SwiperSlide } from "swiper/react";
+import type { Swiper as SwiperType } from "swiper";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { ROUTES } from "@/lib/constants";
+
+import "swiper/css";
 
 interface ProductCarouselProps {
   products: HomepageProduct[];
   placeholderImage: string;
 }
 
+const breakpoints = {
+  // 1.2 cards peeking on small mobile
+  320: { slidesPerView: 1.2, spaceBetween: 12 },
+  // 2 cards on small
+  480: { slidesPerView: 2, spaceBetween: 14 },
+  // 3 on tablet
+  640: { slidesPerView: 3, spaceBetween: 16 },
+  // 4 on md
+  768: { slidesPerView: 4, spaceBetween: 16 },
+  // 5 on lg
+  1024: { slidesPerView: 5, spaceBetween: 20 },
+  // 6 in view on xl
+  1280: { slidesPerView: 6, spaceBetween: 24 },
+};
+
 export function ProductCarousel({
   products,
   placeholderImage,
 }: ProductCarouselProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollPrev, setCanScrollPrev] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(false);
-
-  const updateScrollState = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const { scrollLeft, scrollWidth, clientWidth } = el;
-    setCanScrollPrev(scrollLeft > 0);
-    setCanScrollNext(scrollLeft + clientWidth < scrollWidth - 1);
-  }, []);
-
-  useEffect(() => {
-    updateScrollState();
-    const el = scrollRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(updateScrollState);
-    ro.observe(el);
-    el.addEventListener("scroll", updateScrollState);
-    return () => {
-      ro.disconnect();
-      el.removeEventListener("scroll", updateScrollState);
-    };
-  }, [updateScrollState, products.length]);
-
-  const scrollBy = useCallback((direction: -1 | 1) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const step = el.clientWidth * 0.8;
-    el.scrollBy({ left: step * direction, behavior: "smooth" });
-  }, []);
+  const swiperRef = useRef<SwiperType | null>(null);
+  const [isBeginning, setIsBeginning] = useState(true);
+  const [isEnd, setIsEnd] = useState(false);
 
   if (products.length === 0) return null;
 
   return (
     <div className="relative group">
-      {/* Prev */}
-      <Button
+      <Swiper
+        spaceBetween={24}
+        slidesPerView={1.2}
+        breakpoints={breakpoints}
+        className="py-2 px-1"
+        onSwiper={swiper => {
+          swiperRef.current = swiper;
+          setIsBeginning(swiper.isBeginning);
+          setIsEnd(swiper.isEnd);
+        }}
+        onSlideChange={swiper => {
+          setIsBeginning(swiper.isBeginning);
+          setIsEnd(swiper.isEnd);
+        }}
+      >
+        {products.map(product => (
+          <SwiperSlide key={product._id} className="!h-auto">
+            <ProductCard
+              product={{
+                ...product,
+                thumbnail: product.thumbnail || placeholderImage,
+              }}
+              className="h-full"
+            />
+          </SwiperSlide>
+        ))}
+      </Swiper>
+
+      <button
         type="button"
-        variant="outline"
-        size="icon"
-        className="absolute left-0 top-1/2 z-10 -translate-y-1/2 -translate-x-2 rounded-full shadow-md opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 md:-translate-x-4 md:opacity-100 md:hover:scale-105 cursor-pointer hover:scale-105"
-        onClick={() => scrollBy(-1)}
-        disabled={!canScrollPrev}
+        onClick={() => swiperRef.current?.slidePrev()}
+        disabled={isBeginning}
+        className="absolute left-0 top-1/2 z-10 -translate-y-1/2 -translate-x-2 rounded-full border border-border bg-card p-2 shadow-md transition-opacity hover:scale-105 disabled:pointer-events-none disabled:opacity-40 md:-translate-x-4"
         aria-label="Xem trước"
       >
         <ChevronLeft className="h-5 w-5" />
-      </Button>
-
-      {/* Scroll area */}
-      <div
-        ref={scrollRef}
-        className="flex gap-4 overflow-x-hidden overflow-y-hidden py-2 pl-1 pr-1 scroll-smooth md:px-2 [scrollbar-width:thin]"
-        style={{ scrollbarGutter: "stable" }}
-      >
-        {products.map(product => (
-          <article
-            key={product._id}
-            className="min-w-[180px] w-[180px] flex-shrink-0 rounded-xl bg-card p-3"
-          >
-            <Link href={`${ROUTES.PRODUCT}/${product.slug}`} className="block">
-              <div className="relative w-full aspect-square overflow-hidden rounded-lg bg-muted">
-                <Image
-                  src={product.thumbnail || placeholderImage}
-                  alt={product.name}
-                  fill
-                  sizes="180px"
-                  className="object-cover"
-                />
-              </div>
-              <h3 className="mt-2 text-sm font-medium line-clamp-2">
-                {product.name}
-              </h3>
-              <p className="mt-1 text-sm text-primary">
-                {product.price != null
-                  ? `${product.price.toLocaleString()}đ`
-                  : "Liên hệ"}
-              </p>
-            </Link>
-          </article>
-        ))}
-      </div>
-
-      {/* Next */}
-      <Button
+      </button>
+      <button
         type="button"
-        variant="outline"
-        size="icon"
-        className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-2 rounded-full shadow-md opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 md:translate-x-4 md:opacity-100 md:hover:scale-105 cursor-pointer hover:scale-105"
-        onClick={() => scrollBy(1)}
-        disabled={!canScrollNext}
+        onClick={() => swiperRef.current?.slideNext()}
+        disabled={isEnd}
+        className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-2 rounded-full border border-border bg-card p-2 shadow-md transition-opacity hover:scale-105 disabled:pointer-events-none disabled:opacity-40 md:translate-x-4"
         aria-label="Xem tiếp"
       >
         <ChevronRight className="h-5 w-5" />
-      </Button>
+      </button>
     </div>
   );
 }

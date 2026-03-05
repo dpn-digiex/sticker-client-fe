@@ -3,6 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { X, ShoppingCart, Trash2, Minus, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ import { useCartStore } from "@/stores/cart.store";
 import type { CartItem } from "@/types/cart";
 import { formatVND } from "@/stores/cart.store";
 import { cn } from "@/lib/utils";
-import { ROUTES } from "@/lib/constants";
+import { PLACEHOLDER_IMAGE, ROUTES } from "@/lib/constants";
 
 export function CartDrawer({
   trigger,
@@ -29,6 +30,7 @@ export function CartDrawer({
   trigger: React.ReactNode;
   onCheckout?: () => void;
 }) {
+  const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const items = useCartStore(s => s.items);
   const itemCount = useCartStore(s => s.getItemCount());
@@ -115,6 +117,7 @@ export function CartDrawer({
                 onClick={() => {
                   setOpen(false);
                   onCheckout?.();
+                  router.push(ROUTES.CHECKOUT);
                 }}
               >
                 Đặt hàng ngay
@@ -153,7 +156,7 @@ function CartLineItem({
   onRemove: () => void;
   onNavigate: () => void;
 }) {
-  const img = item.image || "/images/placeholder.png";
+  const img = item.image || PLACEHOLDER_IMAGE;
   const price = item.campaignPrice ?? item.price ?? 0;
 
   return (

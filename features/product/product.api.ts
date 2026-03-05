@@ -99,6 +99,59 @@ export interface ProductDetailResult {
   variants: Variant[];
 }
 
+export type ProductSort = "newest" | "price_asc" | "price_desc" | "name_asc";
+
+export interface ProductListParams {
+  category_id?: string;
+  page?: number;
+  limit?: number;
+  sort?: ProductSort;
+  keyword?: string;
+}
+
+export interface ProductListResult {
+  data: Product[];
+  total: number;
+}
+
+/** For use in Server Components; fetches paginated products (e.g. by category). */
+export async function fetchProductList(
+  params: ProductListParams,
+  options?: { next?: { revalidate?: number | false; tags?: string[] } }
+): Promise<ProductListResult> {
+  const searchParams = new URLSearchParams();
+  if (params.category_id) searchParams.set("category_id", params.category_id);
+  if (params.page != null) searchParams.set("page", String(params.page));
+  if (params.limit != null) searchParams.set("limit", String(params.limit));
+  if (params.sort) searchParams.set("sort", params.sort);
+  if (params.keyword) searchParams.set("keyword", params.keyword);
+
+  const base = process.env.NEXT_PUBLIC_API_URL;
+  const url = `${base}${API_ENDPOINTS.PRODUCT}?${searchParams.toString()}`;
+  const res = await fetch(url, {
+    headers: { "Content-Type": "application/json" },
+    next: options?.next,
+  });
+
+  if (!res.ok) {
+    throw new Error(
+      `Product list fetch failed: ${res.status} ${res.statusText}`
+    );
+  }
+
+  const body: ServiceResponse<{ data: ApiProduct[]; total: number }> =
+    await res.json();
+  if (!body.success || !body.data) {
+    return { data: [], total: 0 };
+  }
+
+  const { data: list, total } = body.data;
+  return {
+    data: (list ?? []).map(mapApiProductToProduct),
+    total: total ?? 0,
+  };
+}
+
 export const productApi = {
   async getProductBySlug(slug: string): Promise<ProductDetailResult> {
     const res = await apiClient.get<ServiceResponse<ApiProduct>>(

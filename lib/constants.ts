@@ -50,6 +50,7 @@ export const ROUTES = {
   HOME: "/",
   LOGIN: "/login",
   REGISTER: "/register",
+  CATEGORY: "/category",
   PRODUCT: "/product",
   PRODUCT_DETAIL: "/product/:slug",
   CART: "/cart",
@@ -73,6 +74,8 @@ export const NAV_ITEMS: NavItem[] = [
 export const API_ENDPOINTS = {
   PRODUCT: "/products",
   PRODUCT_DETAIL: "/products/slug",
+  CATEGORIES: "/categories",
+  CATEGORY_BY_SLUG: "/categories/slug",
   CART: "/cart",
   CHECKOUT: "/checkout",
   CAMPAIGNS: "/campaigns",

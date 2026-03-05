@@ -70,9 +70,7 @@ export default function ContactClient() {
                   }}
                   className={cn(
                     "group flex w-full items-center justify-between rounded-xl border border-border px-4 py-4 text-left transition",
-                    "hover:border-primary/40 hover:bg-accent/40",
-                    m.highlight &&
-                      "bg-[#c27a4a]/90 text-white hover:bg-[#c27a4a]"
+                    "hover:border-primary/40 hover:bg-accent/40 cursor-pointer"
                   )}
                 >
                   <span
