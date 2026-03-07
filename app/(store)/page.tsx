@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { fetchHomepage } from "@/features/homepage/homepage.api";
 import type { HomepageCategory } from "@/features/homepage/homepage.types";
@@ -45,15 +46,19 @@ export default async function HomePage() {
   return (
     <main className="bg-background">
       {/* HERO / SEARCH */}
-      <section className="container mx-auto px-4 pt-16 pb-12 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-          Sản phẩm K-pop, Doll & Handmade Merch
-        </h1>
-
-        <p className="mt-4 max-w-2xl mx-auto text-muted-foreground">
-          Nhận order K-pop, C-pop, Anime, doll, sticker handmade từ Taobao, PDD,
-          Douyin, XHS. Hỗ trợ pre-order và order theo yêu cầu.
-        </p>
+      <section className="container mx-auto text-center">
+        <div className="flex flex-col items-center">
+          <Image
+            src="/dango_icon.png"
+            alt="Dango's Corner"
+            width={240}
+            height={240}
+            className="h-30 w-auto md:h-40"
+          />
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+            Tại đây chúng tôi có stickers
+          </h1>
+        </div>
 
         {/* Search (indexable placeholder) */}
         <form
