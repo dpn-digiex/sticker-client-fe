@@ -3,12 +3,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { fetchCategoryBySlug } from "@/features/category/category.api";
+import {
+  fetchCategoryBySlug,
+  fetchCategoryList,
+} from "@/features/category/category.api";
 import {
   fetchProductList,
   type ProductSort,
 } from "@/features/product/product.api";
-import { CategorySortSelect } from "../../../../components/common/CategorySortSelect";
+import { CategoryFilterSelect } from "@/components/common/CategoryFilterSelect";
+import { CategorySortSelect } from "@/components/common/CategorySortSelect";
 import { ROUTES } from "@/lib/constants";
 import { ProductCard } from "@/components/common/ProductCard";
 
@@ -67,9 +71,10 @@ export default async function CategoryPage({
   const { slug } = await params;
   const resolvedSearch = await searchParams;
 
-  const category = await fetchCategoryBySlug(slug, {
-    next: { revalidate: 60 },
-  });
+  const [category, categories] = await Promise.all([
+    fetchCategoryBySlug(slug, { next: { revalidate: 60 } }),
+    fetchCategoryList({ next: { revalidate: 60 } }),
+  ]);
   if (!category) notFound();
 
   const page = Math.max(1, parseInt(resolvedSearch.page ?? "1", 10) || 1);
@@ -86,8 +91,6 @@ export default async function CategoryPage({
     },
     { next: { revalidate: 60 } }
   );
-
-  console.log("123products", products);
 
   const totalPages = Math.max(1, Math.ceil(total / DEFAULT_PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -182,7 +185,7 @@ export default async function CategoryPage({
               type="search"
               name="q"
               defaultValue={keyword}
-              placeholder="Tìm kiếm sản phẩm, artist, phân loại..."
+              placeholder="Tìm kiếm sản phẩm, phân loại..."
               className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -191,48 +194,16 @@ export default async function CategoryPage({
         {/* Filters row */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex flex-wrap items-center gap-3">
-            {/* Category filter: current category (or link to all) */}
-            <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
-              <svg
-                className="h-4 w-4 shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h7"
-                />
-              </svg>
-              <span className="text-foreground font-medium">
-                {category.name}
-              </span>
-              <span aria-hidden className="text-muted-foreground">
-                ▾
-              </span>
-            </div>
-            {/* Artist placeholder */}
-            <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
-              <svg
-                className="h-4 w-4 shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h7"
-                />
-              </svg>
-              <span>Tất cả Artist</span>
-              <span aria-hidden className="text-muted-foreground">
-                ▾
-              </span>
-            </div>
+            <Suspense
+              fallback={
+                <div className="w-[220px] h-10 rounded-xl bg-muted animate-pulse" />
+              }
+            >
+              <CategoryFilterSelect
+                categories={categories}
+                currentSlug={category.slug}
+              />
+            </Suspense>
           </div>
           <Suspense
             fallback={

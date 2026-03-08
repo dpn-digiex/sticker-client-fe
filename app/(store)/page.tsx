@@ -69,7 +69,7 @@ export default async function HomePage() {
           <input
             type="search"
             name="q"
-            placeholder="Tìm kiếm sản phẩm, artist, danh mục..."
+            placeholder="Tìm kiếm sản phẩm, phân loại..."
             className="w-full max-w-xl rounded-xl border border-border bg-card px-4 py-3 text-sm"
           />
         </form>

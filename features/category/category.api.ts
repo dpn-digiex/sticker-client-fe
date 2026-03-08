@@ -8,6 +8,36 @@ interface ServiceResponse<T> {
   statusCode: number;
 }
 
+/** For use in Server Components; fetches all categories. */
+export async function fetchCategoryList(options?: {
+  next?: { revalidate?: number | false; tags?: string[] };
+}): Promise<Category[]> {
+  const base = process.env.NEXT_PUBLIC_API_URL;
+  const url = `${base}${API_ENDPOINTS.CATEGORIES}`;
+  const res = await fetch(url, {
+    headers: { "Content-Type": "application/json" },
+    next: options?.next,
+  });
+
+  if (!res.ok) {
+    throw new Error(`Categories fetch failed: ${res.status} ${res.statusText}`);
+  }
+
+  const body: ServiceResponse<Array<Record<string, unknown>>> =
+    await res.json();
+  if (!body.success || !Array.isArray(body.data)) return [];
+
+  return body.data.map((raw: Record<string, unknown>) => ({
+    id: String(raw.id),
+    name: String(raw.name),
+    slug: String(raw.slug),
+    description: raw.description != null ? String(raw.description) : null,
+    images: Array.isArray(raw.images) ? (raw.images as string[]) : null,
+    created_at: String(raw.createdAt ?? ""),
+    updated_at: String(raw.updatedAt ?? ""),
+  }));
+}
+
 /** For use in Server Components; fetches category by slug. */
 export async function fetchCategoryBySlug(
   slug: string,

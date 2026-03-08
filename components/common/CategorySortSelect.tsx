@@ -36,13 +36,17 @@ export function CategorySortSelect({ currentSort }: CategorySortSelectProps) {
 
   return (
     <Select value={currentSort} onValueChange={onSortChange}>
-      <SelectTrigger className="w-[220px] rounded-xl border-border bg-card text-muted-foreground">
+      <SelectTrigger className="w-[220px] rounded-xl border-border bg-card text-muted-foreground cursor-pointer">
         <ArrowUpDown className="mr-2 h-4 w-4 shrink-0" />
         <SelectValue />
       </SelectTrigger>
       <SelectContent className="rounded-xl border-border bg-card">
         {SORT_OPTIONS.map(opt => (
-          <SelectItem key={opt.value} value={opt.value} className="rounded-lg">
+          <SelectItem
+            key={opt.value}
+            value={opt.value}
+            className="rounded-lg cursor-pointer"
+          >
             {opt.label}
           </SelectItem>
         ))}
