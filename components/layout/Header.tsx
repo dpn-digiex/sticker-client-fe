@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
@@ -97,6 +98,11 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
 export function CartButton() {
   const itemCount = useCartStore(state => state.getItemCount());
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <CartDrawer
@@ -104,7 +110,7 @@ export function CartButton() {
       trigger={
         <Button variant="ghost" size="icon" className="rounded-full relative">
           <ShoppingBag className="h-5 w-5" />
-          {itemCount > 0 && (
+          {mounted && itemCount > 0 && (
             <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs font-semibold text-primary-foreground">
               {itemCount}
             </span>
@@ -195,8 +201,67 @@ function AuthMenu({
   );
 }
 
+const LOGO_HEIGHT = 60;
+const LOGO_WIDTH = Math.round(LOGO_HEIGHT * (16 / 9));
+
+function LogoImage() {
+  return (
+    <Link href="/" className="flex items-center">
+      <span
+        className="relative block shrink-0"
+        style={{ width: LOGO_WIDTH, height: LOGO_HEIGHT }}
+      >
+        <Image
+          src="/dango_logo.png"
+          alt="Dango's Corner"
+          fill
+          className="object-contain"
+          sizes={`${LOGO_WIDTH}px`}
+        />
+      </span>
+    </Link>
+  );
+}
+
 export function Header() {
   const { user, isAuthenticated } = useAuth();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Defer Radix (Sheet/Dialog) until after mount to avoid server/client ID mismatch
+  if (!mounted) {
+    return (
+      <>
+        <header className="sticky top-0 z-50 w-full bg-background dark:bg-background">
+          <div className="container mx-auto flex h-16 items-center gap-3 px-4">
+            <div className="md:hidden">
+              <span
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full"
+                aria-hidden
+              >
+                <Menu className="h-5 w-5" />
+              </span>
+            </div>
+            <LogoImage />
+            <div className="hidden flex-1 justify-center md:flex">
+              <nav className="flex items-center">
+                <NavLinks />
+              </nav>
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              <span className="h-10 w-10 rounded-full" aria-hidden />
+              <span className="h-10 w-10 rounded-full" aria-hidden />
+              <span className="h-10 w-10 rounded-full" aria-hidden />
+            </div>
+          </div>
+        </header>
+        <HeaderNotification />
+      </>
+    );
+  }
 
   return (
     <>
@@ -213,10 +278,7 @@ export function Header() {
 
               <SheetContent side="left" className="w-[300px] sm:w-[340px]">
                 <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <span aria-hidden>🍡</span>
-                    <span className="font-semibold">Dango&apos;s Corner</span>
-                  </SheetTitle>
+                  <SheetTitle className="flex items-center gap-2"></SheetTitle>
                 </SheetHeader>
 
                 <div className="mt-6">
@@ -269,14 +331,7 @@ export function Header() {
           </div>
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg" aria-hidden>
-              🍡
-            </span>
-            <span className="text-lg font-semibold tracking-tight text-primary">
-              Dango&apos;s Corner
-            </span>
-          </Link>
+          <LogoImage />
 
           {/* Center nav (desktop) */}
           <div className="hidden flex-1 justify-center md:flex">

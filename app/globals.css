@@ -25,7 +25,8 @@
   --muted: 351 83% 95%; /* #FDE9EC */
   --muted-foreground: 4 10% 45%;
 
-  --accent: 351 83% 95%;
+  /* --accent: 351 83% 95%; */
+  --accent: 75 63% 91%; /* #F3F9DD */
   --accent-foreground: 4 14% 25%;
 
   /* System */
@@ -154,15 +155,16 @@ body {
 
 @layer utilities {
   @keyframes marquee {
-    0% {
+    from {
       transform: translateX(0);
     }
-    100% {
+    to {
       transform: translateX(-50%);
     }
   }
 
   .animate-marquee {
-    animation: marquee 24s linear infinite;
+    animation: marquee 60s linear infinite;
+    will-change: transform;
   }
 }
