@@ -201,6 +201,28 @@ function AuthMenu({
   );
 }
 
+const LOGO_HEIGHT = 60;
+const LOGO_WIDTH = Math.round(LOGO_HEIGHT * (16 / 9));
+
+function LogoImage() {
+  return (
+    <Link href="/" className="flex items-center">
+      <span
+        className="relative block shrink-0"
+        style={{ width: LOGO_WIDTH, height: LOGO_HEIGHT }}
+      >
+        <Image
+          src="/dango_logo.png"
+          alt="Dango's Corner"
+          fill
+          className="object-contain"
+          sizes={`${LOGO_WIDTH}px`}
+        />
+      </span>
+    </Link>
+  );
+}
+
 export function Header() {
   const { user, isAuthenticated } = useAuth();
   const [mounted, setMounted] = React.useState(false);
@@ -223,15 +245,7 @@ export function Header() {
                 <Menu className="h-5 w-5" />
               </span>
             </div>
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/dango_logo.png"
-                alt="Dango's Corner"
-                width={190}
-                height={60}
-                className="h-15 w-auto"
-              />
-            </Link>
+            <LogoImage />
             <div className="hidden flex-1 justify-center md:flex">
               <nav className="flex items-center">
                 <NavLinks />
@@ -264,15 +278,7 @@ export function Header() {
 
               <SheetContent side="left" className="w-[300px] sm:w-[340px]">
                 <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <Image
-                      src="/dango_logo.png"
-                      alt="Dango's Corner"
-                      width={190}
-                      height={60}
-                      className="h-15 w-auto"
-                    />
-                  </SheetTitle>
+                  <SheetTitle className="flex items-center gap-2"></SheetTitle>
                 </SheetHeader>
 
                 <div className="mt-6">
@@ -325,15 +331,7 @@ export function Header() {
           </div>
 
           {/* Logo */}
-          <Link href="/" className="flex items-center">
-            <Image
-              src="/dango_logo.png"
-              alt="Dango's Corner"
-              width={190}
-              height={60}
-              className="h-15 w-auto"
-            />
-          </Link>
+          <LogoImage />
 
           {/* Center nav (desktop) */}
           <div className="hidden flex-1 justify-center md:flex">

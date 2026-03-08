@@ -42,10 +42,13 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
   return (
     <article
-      className={`rounded-xl bg-card border border-border overflow-hidden shadow-sm hover:shadow-md transition-shadow ${className ?? ""}`}
+      className={`min-w-0 w-full rounded-xl bg-card border border-border overflow-hidden shadow-sm hover:shadow-md transition-shadow ${className ?? ""}`}
     >
-      <Link href={`${ROUTES.PRODUCT}/${slug}`} className="group/card block">
-        <div className="relative aspect-square overflow-hidden bg-muted">
+      <Link
+        href={`${ROUTES.PRODUCT}/${slug}`}
+        className="group/card block w-full min-w-0"
+      >
+        <div className="relative w-full min-h-0 aspect-square overflow-hidden bg-muted">
           <Image
             src={thumbnail || PLACEHOLDER_IMAGE}
             alt={name}
