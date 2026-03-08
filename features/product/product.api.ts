@@ -126,7 +126,7 @@ export async function fetchProductList(
   if (params.sort) searchParams.set("sort", params.sort);
   if (params.keyword) searchParams.set("keyword", params.keyword);
 
-  const base = process.env.NEXT_PUBLIC_API_URL;
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   const url = `${base}${API_ENDPOINTS.PRODUCT}?${searchParams.toString()}`;
   const res = await fetch(url, {
     headers: { "Content-Type": "application/json" },

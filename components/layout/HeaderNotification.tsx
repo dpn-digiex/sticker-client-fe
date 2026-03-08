@@ -1,20 +1,23 @@
 "use client";
 const notices = [
-  "📦 Hàng order về từ 5–15 ngày sau khi kho Trung nhận được hàng 📦",
-  "🍮 Hàng pre-order thời gian sản xuất lâu, cân nhắc kỹ trước khi đặt hàng 🍮",
+  "🚚 Hàng order bay từ Trung về, thường mất khoảng 5–15 ngày 🚚",
+  "🍡 Hàng pre-order chế tác hơi lâu, kiên nhẫn chút nha bạn iu 🍡",
+  "🫡 Chơi sticker đến hơi thở cuối cùng cùng Dango nhoé 🫡",
+  "✨ Ví tiền có thể mỏng đi, nhưng bộ sưu tập sticker thì phải ngày càng dày lên ✨",
 ];
 
 export function HeaderNotification() {
   return (
     <div className="sticky top-16 z-40 h-9 w-full bg-accent overflow-hidden">
       <div className="relative flex h-full items-center">
-        <div className="animate-marquee flex min-w-full items-center gap-24 px-8">
-          <NoticeItem>{notices[0]}</NoticeItem>
-          <NoticeItem>{notices[1]}</NoticeItem>
-
+        <div className="animate-marquee flex w-max items-center gap-24 px-8">
+          {notices.map((notice, i) => (
+            <NoticeItem key={`a-${i}`}>{notice}</NoticeItem>
+          ))}
           {/* duplicate for seamless loop */}
-          <NoticeItem>{notices[0]}</NoticeItem>
-          <NoticeItem>{notices[1]}</NoticeItem>
+          {notices.map((notice, i) => (
+            <NoticeItem key={`b-${i}`}>{notice}</NoticeItem>
+          ))}
         </div>
       </div>
     </div>

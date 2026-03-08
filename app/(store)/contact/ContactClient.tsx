@@ -145,9 +145,15 @@ export default function ContactClient() {
 
             {/* Optional CTA */}
             <div className="mt-8">
-              <Button variant="outline" className="rounded-xl">
-                Nhắn tin hỗ trợ
-              </Button>
+              <Link
+                href="https://www.facebook.com/share/g/1G6e1XqsyZ/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="outline" className="rounded-xl">
+                  Nhắn tin hỗ trợ
+                </Button>
+              </Link>
             </div>
           </section>
 

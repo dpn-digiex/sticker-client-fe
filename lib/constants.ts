@@ -72,6 +72,7 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 export const API_ENDPOINTS = {
+  HOMEPAGE: "/homepage",
   PRODUCT: "/products",
   PRODUCT_DETAIL: "/products/slug",
   CATEGORIES: "/categories",
