@@ -9,6 +9,7 @@ import { PreorderCountdown } from "@/components/common/PreorderCountdown";
 import { ProductImageSlider } from "@/components/common/ProductImageSlider";
 import { productApi } from "@/features/product/product.api";
 import { PLACEHOLDER_IMAGE, ROUTES } from "@/lib/constants";
+import { formatVND } from "@/lib/utils";
 
 async function getRelatedProductsByCategory(
   categoryId: string | null,
@@ -22,18 +23,14 @@ async function getRelatedProductsByCategory(
 function isPreorderExpired(p: Product) {
   if (p.product_type !== "preorder" || !p.preorder?.end_date) return false;
   const end = new Date(p.preorder.end_date);
-  // so sánh theo thời gian hiện tại (server time)
+  // compare with current time (server time)
   return end.getTime() < Date.now();
 }
 
-function isSoldOut(p: Product) {
-  // in_stock mà stock <= 0, hoặc preorder hết hạn
+function isSoldOutProduct(p: Product) {
+  // in_stock with stock <= 0, or preorder expired
   if (p.product_type === "in_stock") return (p.stock ?? 0) <= 0;
   return isPreorderExpired(p);
-}
-
-function formatVND(amount: number) {
-  return `${amount.toLocaleString("vi-VN")}đ`;
 }
 
 // ✅ SEO: dynamic metadata by slug/product
@@ -93,6 +90,7 @@ export default async function ProductDetailPage({
   );
 
   const isPreorder = product.product_type === "preorder";
+  const isSoldOut = isSoldOutProduct(product);
 
   const isIncludedDescription =
     product.size_description ||
@@ -120,8 +118,15 @@ export default async function ProductDetailPage({
           {/* LEFT: Gallery */}
           <section
             aria-label="Hình ảnh sản phẩm"
-            className="rounded-2xl border border-border bg-card p-4"
+            className={`relative rounded-2xl border bg-card p-4 ${
+              isSoldOut ? "border-muted-foreground/30" : "border-border"
+            }`}
           >
+            {isSoldOut && (
+              <div className="absolute left-4 top-4 z-10 rounded-full border-2 border-destructive bg-destructive/90 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-destructive-foreground shadow-sm">
+                Hết hàng
+              </div>
+            )}
             <ProductImageSlider
               images={product.images ?? []}
               productName={product.name}
@@ -132,12 +137,17 @@ export default async function ProductDetailPage({
           <section aria-label="Thông tin sản phẩm" className="space-y-5">
             {/* badges */}
             <div className="flex items-center gap-2">
-              {isPreorder && (
+              {isSoldOut && (
+                <span className="inline-flex items-center rounded-full border-2 border-destructive bg-destructive/15 px-4 py-1.5 text-sm font-bold text-destructive">
+                  Hết hàng
+                </span>
+              )}
+              {!isSoldOut && isPreorder && (
                 <span className="inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-semibold text-foreground">
                   Pre-order
                 </span>
               )}
-              {!isPreorder && product.stock > 0 && (
+              {!isSoldOut && !isPreorder && (product.stock ?? 0) > 0 && (
                 <span className="inline-flex items-center rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-foreground">
                   In stock
                 </span>
@@ -159,9 +169,19 @@ export default async function ProductDetailPage({
             </div>
 
             {/* price block */}
-            <div className="rounded-2xl border border-border bg-card px-6 py-4">
+            <div
+              className={`rounded-2xl border bg-card px-6 py-4 ${
+                isSoldOut
+                  ? "border-muted-foreground/30 bg-muted/30"
+                  : "border-border"
+              }`}
+            >
               <div className="flex items-end gap-2">
-                <div className="text-3xl font-bold text-primary">
+                <div
+                  className={`text-3xl font-bold ${
+                    isSoldOut ? "text-muted-foreground" : "text-primary-bold"
+                  }`}
+                >
                   {formatVND(product.price)}
                 </div>
                 {product.price_note && (
@@ -172,8 +192,8 @@ export default async function ProductDetailPage({
               </div>
             </div>
 
-            {/* preorder countdown */}
-            {isShowPreorderCountdown && (
+            {/* preorder countdown — ẩn khi đã hết hàng */}
+            {!isSoldOut && isShowPreorderCountdown && (
               <PreorderCountdown
                 endDate={product.preorder?.end_date ?? ""}
                 startDate={product.preorder?.start_date ?? ""}
@@ -230,12 +250,33 @@ export default async function ProductDetailPage({
               </div>
             )}
 
-            {/* Variant selector & Add to cart (CLIENT) */}
-            <ProductCartControls
-              product={product}
-              variants={variants}
-              basePrice={product.price}
-            />
+            {/* Variant selector & Add to cart — ẩn khi hết hàng, thay bằng thông báo */}
+            {isSoldOut ? (
+              <div
+                className="rounded-2xl border-2 border-dashed border-destructive/50 bg-destructive/5 px-6 py-8 text-center"
+                aria-live="polite"
+              >
+                <p className="text-base font-semibold text-destructive">
+                  Sản phẩm tạm hết hàng
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Bạn vẫn có thể xem thông tin sản phẩm phía trên. Vui lòng quay
+                  lại sau hoặc xem sản phẩm khác.
+                </p>
+                <Link
+                  href={ROUTES.PRODUCT}
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-muted px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/80"
+                >
+                  Xem sản phẩm khác →
+                </Link>
+              </div>
+            ) : (
+              <ProductCartControls
+                product={product}
+                variants={variants}
+                basePrice={product.price}
+              />
+            )}
           </section>
         </div>
 
@@ -265,7 +306,7 @@ export default async function ProductDetailPage({
 
             <div className="mt-6 flex gap-4 overflow-x-auto pb-2">
               {relatedProducts.map(p => {
-                const soldOut = isSoldOut(p);
+                const soldOut = isSoldOutProduct(p);
 
                 return (
                   <Link
@@ -299,7 +340,7 @@ export default async function ProductDetailPage({
                         {p.name}
                       </h3>
 
-                      <p className="text-base font-semibold text-primary">
+                      <p className="text-base font-semibold text-primary-bold">
                         {formatVND(p.price)}
                       </p>
                     </div>

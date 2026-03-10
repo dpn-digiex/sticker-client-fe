@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Tag, Copy } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,18 +16,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCartStore, formatVND, getUnitPrice } from "@/stores/cart.store";
+import { useCartStore } from "@/stores/cart.store";
 import { useCheckoutStore } from "@/stores/checkout.store";
-import { PAYMENT_METHOD, PLACEHOLDER_IMAGE, ROUTES } from "@/lib/constants";
+import {
+  APP_NAME,
+  CHECKOUT_SUCCESS_SESSION_KEY,
+  PAYMENT_METHOD,
+  PLACEHOLDER_IMAGE,
+  ROUTES,
+} from "@/lib/constants";
+import { PAYMENT_METHODS } from "@/features/contact/contact.data";
+import { orderApi } from "@/features/order/order.api";
 import type { CartItem } from "@/types/cart";
-import { PaymentMethod } from "@/types/order";
+import type { PaymentMethod } from "@/types/order";
+import { formatVND, getUnitPrice } from "@/lib/utils";
 
-// Placeholder bank transfer info (replace with real config/API)
-const BANK_TRANSFER = {
-  accountHolder: "BUI THANH NHU Y",
-  bank: "VPBank",
-  accountNumber: "0395939035",
-};
+const BILL_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -58,11 +63,23 @@ export default function CheckoutPage() {
   const [paymentPlan, setPaymentPlan] = useState<"full" | "deposit">(
     payment_info?.plan_type ?? "full"
   );
+
+  const storeMethodToId = (method: string | undefined): string => {
+    const map: Record<string, string> = {
+      [PAYMENT_METHOD.BANK_TRANSFER]: "tpbank",
+      [PAYMENT_METHOD.MOMO]: "momo",
+      [PAYMENT_METHOD.PAYPAL]: "paypal",
+    };
+    return method && map[method] ? map[method] : PAYMENT_METHODS[0].id;
+  };
+
   const [paymentMethod, setPaymentMethod] = useState<string>(
-    payment_info?.method ?? PAYMENT_METHOD.BANK_TRANSFER
+    storeMethodToId(payment_info?.method)
   );
-  const [billFile, setBillFile] = useState<File | null>(null);
-  const [billPreview, setBillPreview] = useState<string | null>(null);
+  /** Data URL (base64) for preview and for API; null when no file selected. */
+  const [billImageDataUrl, setBillImageDataUrl] = useState<string | null>(null);
+  const [agreedToPolicy, setAgreedToPolicy] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -70,26 +87,50 @@ export default function CheckoutPage() {
     }
   }, [items.length, router]);
 
-  const copyBankInfo = () => {
-    const text = `Chủ tài khoản: ${BANK_TRANSFER.accountHolder}\nNgân hàng/Ví: ${BANK_TRANSFER.bank}\nSố tài khoản: ${BANK_TRANSFER.accountNumber}`;
-    void navigator.clipboard.writeText(text);
+  const selectedPayment = PAYMENT_METHODS.find(m => m.id === paymentMethod);
+
+  const copyPaymentInfo = () => {
+    if (selectedPayment) {
+      void navigator.clipboard.writeText(selectedPayment.value);
+    }
   };
 
   const onBillChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setBillFile(file);
-      setBillPreview(URL.createObjectURL(file));
-    } else {
-      setBillFile(null);
-      setBillPreview(null);
+    if (!file) {
+      setBillImageDataUrl(null);
+      return;
     }
+    if (file.size > BILL_IMAGE_MAX_SIZE_BYTES) {
+      toast.error("File quá lớn", {
+        description:
+          "Bill chuyển khoản phải nhỏ hơn 5MB. Vui lòng chọn file khác.",
+      });
+      e.target.value = "";
+      setBillImageDataUrl(null);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : null;
+      setBillImageDataUrl(dataUrl);
+    };
+    reader.readAsDataURL(file);
   };
 
   const depositAmount = Math.floor(subtotal * 0.5);
   const total = paymentPlan === "deposit" ? depositAmount : subtotal;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const paymentMethodToStore = (id: string): PaymentMethod => {
+    const map: Record<string, PaymentMethod> = {
+      tpbank: PAYMENT_METHOD.BANK_TRANSFER,
+      momo: PAYMENT_METHOD.MOMO,
+      paypal: PAYMENT_METHOD.PAYPAL,
+    };
+    return map[id] ?? (PAYMENT_METHOD.BANK_TRANSFER as PaymentMethod);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setContactInfo({ social_link: socialLink, email, phone });
     setShippingInfo({
@@ -101,10 +142,70 @@ export default function CheckoutPage() {
     setPromotionCode(discountCode || null);
     setPaymentInfo({
       plan_type: paymentPlan,
-      method: paymentMethod as PaymentMethod,
-      bill_image: billPreview ?? null,
+      method: paymentMethodToStore(paymentMethod),
+      bill_image: billImageDataUrl ?? null,
     });
-    // TODO: call order API, then redirect to order confirmation
+
+    if (selectedPayment && !billImageDataUrl) {
+      toast.error("Vui lòng đăng bill chuyển khoản", {
+        description: "Bill chuyển khoản là bắt buộc trước khi đặt hàng.",
+      });
+      return;
+    }
+
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    const payload = {
+      contact: {
+        social_link: socialLink,
+        email,
+        phone,
+      },
+      shippingInfo: {
+        receiver_name: receiverName,
+        receiver_phone: receiverPhone || undefined,
+        address,
+        notes: notes || undefined,
+      },
+      payment: {
+        plan_type: paymentPlan,
+        method: paymentMethodToStore(paymentMethod),
+        bill_image: billImageDataUrl ?? null,
+      },
+      items: items.map(item => ({
+        productId: item.productId,
+        variantId: item.variantId ?? null,
+        quantity: item.quantity,
+      })),
+    };
+
+    try {
+      const res = await orderApi.createOrder(payload);
+      if (res.success && res.data) {
+        toast.success("Đơn hàng đã được tạo", {
+          description: "Trạng thái: Chờ xác nhận",
+        });
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(
+            CHECKOUT_SUCCESS_SESSION_KEY,
+            crypto.randomUUID()
+          );
+        }
+        router.push(ROUTES.CHECKOUT_SUCCESS);
+      } else {
+        toast.error(res.message ?? "Không thể tạo đơn hàng");
+      }
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response
+              ?.data?.message
+          : null;
+      toast.error(message ?? "Đã có lỗi xảy ra. Vui lòng thử lại.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (items.length === 0) return null;
@@ -132,12 +233,12 @@ export default function CheckoutPage() {
                   <span className="text-destructive">*</span>
                 </label>
                 <Input
+                  required
                   type="url"
                   placeholder="https://..."
                   value={socialLink}
                   onChange={e => setSocialLink(e.target.value)}
-                  required
-                  className="rounded-xl"
+                  className="rounded-xl placeholder:opacity-30"
                 />
               </div>
               <div>
@@ -145,12 +246,12 @@ export default function CheckoutPage() {
                   Email <span className="text-destructive">*</span>
                 </label>
                 <Input
+                  required
                   type="email"
                   placeholder="email@example.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  required
-                  className="rounded-xl"
+                  className="rounded-xl placeholder:opacity-30"
                 />
               </div>
               <div>
@@ -158,12 +259,12 @@ export default function CheckoutPage() {
                   Số điện thoại <span className="text-destructive">*</span>
                 </label>
                 <Input
+                  required
                   type="tel"
                   placeholder="090..."
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
-                  required
-                  className="rounded-xl"
+                  className="rounded-xl placeholder:opacity-30"
                 />
               </div>
             </div>
@@ -181,23 +282,26 @@ export default function CheckoutPage() {
                   <span className="text-destructive">*</span>
                 </label>
                 <Input
+                  required
+                  type="text"
                   placeholder="Nguyễn Văn A"
                   value={receiverName}
                   onChange={e => setReceiverName(e.target.value)}
-                  required
-                  className="rounded-xl"
+                  className="rounded-xl placeholder:opacity-30"
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">
-                  Số điện thoại nhận hàng
+                  Số điện thoại nhận hàng{" "}
+                  <span className="text-destructive">*</span>
                 </label>
                 <Input
+                  required
                   type="tel"
                   placeholder="090..."
                   value={receiverPhone}
                   onChange={e => setReceiverPhone(e.target.value)}
-                  className="rounded-xl"
+                  className="rounded-xl placeholder:opacity-30"
                 />
               </div>
               <div>
@@ -205,11 +309,11 @@ export default function CheckoutPage() {
                   Địa chỉ nhận hàng <span className="text-destructive">*</span>
                 </label>
                 <Input
-                  placeholder="Số nhà, đường, phường, quận, thành phố (đơn vị hành chính cũ)"
+                  required
+                  placeholder="Số nhà, đường, phường, quận, thành phố (đơn vị hành chính mới)"
                   value={address}
                   onChange={e => setAddress(e.target.value)}
-                  required
-                  className="rounded-xl"
+                  className="rounded-xl placeholder:opacity-30"
                 />
               </div>
               <div>
@@ -221,44 +325,9 @@ export default function CheckoutPage() {
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   rows={3}
-                  className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground placeholder:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
-            </div>
-          </section>
-
-          {/* Cart summary */}
-          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-foreground">Giỏ hàng</h2>
-            <ul className="mt-4 space-y-3">
-              {items.map(item => (
-                <CheckoutLineItem key={item.cartItemId} item={item} />
-              ))}
-            </ul>
-            <div className="mt-4 flex items-center gap-2">
-              <Tag className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">
-                Mã giảm giá
-              </span>
-            </div>
-            <div className="mt-2 flex gap-2">
-              <Input
-                placeholder="Nhập mã giảm giá"
-                value={discountCode}
-                onChange={e => setDiscountCode(e.target.value)}
-                className="rounded-xl"
-              />
-              <Button type="button" variant="secondary" className="rounded-xl">
-                Áp dụng
-              </Button>
-            </div>
-            <div className="mt-4 flex justify-between text-sm">
-              <span className="text-muted-foreground">Tạm tính:</span>
-              <span className="font-medium">{formatVND(subtotal)}</span>
-            </div>
-            <div className="mt-2 flex justify-between text-base font-semibold text-primary">
-              <span>Tổng cộng:</span>
-              <span>{formatVND(total)}</span>
             </div>
           </section>
 
@@ -299,41 +368,43 @@ export default function CheckoutPage() {
             <p className="mt-6 text-sm font-medium text-foreground">
               Chọn phương thức thanh toán
             </p>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger className="mt-2 rounded-xl">
+            <Select
+              value={paymentMethod}
+              onValueChange={setPaymentMethod}
+              name="payment-method"
+            >
+              <SelectTrigger
+                className="mt-2 rounded-xl"
+                id="payment-method-trigger"
+                aria-labelledby="payment-method-label"
+              >
                 <SelectValue placeholder="Chọn phương thức" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={PAYMENT_METHOD.BANK_TRANSFER}>
-                  Chuyển khoản
-                </SelectItem>
-                <SelectItem value={PAYMENT_METHOD.MOMO}>Momo</SelectItem>
-                <SelectItem value={PAYMENT_METHOD.ZALOPAY}>ZaloPay</SelectItem>
+                {PAYMENT_METHODS.map(method => (
+                  <SelectItem
+                    key={method.id}
+                    value={method.id}
+                    id={`payment-method-${method.id}`}
+                  >
+                    {method.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
-            {paymentMethod === PAYMENT_METHOD.BANK_TRANSFER && (
+            {selectedPayment && (
               <>
                 <div className="mt-4 rounded-xl border border-border bg-muted/30 p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-1 text-sm">
                       <p>
-                        Chủ tài khoản:{" "}
                         <span className="font-semibold">
-                          {BANK_TRANSFER.accountHolder}
+                          {selectedPayment.label}
                         </span>
                       </p>
-                      <p>
-                        Ngân hàng/Ví:{" "}
-                        <span className="font-semibold">
-                          {BANK_TRANSFER.bank}
-                        </span>
-                      </p>
-                      <p>
-                        Số tài khoản:{" "}
-                        <span className="font-semibold">
-                          {BANK_TRANSFER.accountNumber}
-                        </span>
+                      <p className="break-all text-muted-foreground">
+                        {selectedPayment.value}
                       </p>
                     </div>
                     <Button
@@ -341,7 +412,7 @@ export default function CheckoutPage() {
                       variant="outline"
                       size="sm"
                       className="shrink-0 rounded-lg"
-                      onClick={copyBankInfo}
+                      onClick={copyPaymentInfo}
                     >
                       <Copy className="mr-1 h-4 w-4" />
                       Copy
@@ -350,30 +421,98 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="mt-4 rounded-xl border-2 border-dashed border-pink-300 bg-pink-50/50 p-4 dark:border-pink-700 dark:bg-pink-950/20">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label
+                    htmlFor="bill-upload"
+                    className="block text-sm font-medium text-foreground"
+                  >
                     Đăng bill chuyển khoản{" "}
                     <span className="text-destructive">*</span>
                   </label>
                   <Input
+                    id="bill-upload"
                     type="file"
                     accept="image/*,.pdf"
                     onChange={onBillChange}
-                    className="mt-2 rounded-xl border-border file:mr-2 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:text-primary-foreground"
+                    className="mt-2 h-14 cursor-pointer rounded-xl border-border file:pointer-cursor file:mr-2 file:rounded-lg file:border-0 file:bg-primary file:p-2 file:text-sm file:text-primary-foreground"
                   />
                   <p className="mt-2 text-xs text-muted-foreground">
-                    * Bắt buộc gửi bill trước khi bấm đặt hàng ngay
+                    * Bắt buộc gửi bill trước khi bấm đặt hàng ngay (tối đa 5MB)
                   </p>
                 </div>
               </>
             )}
           </section>
 
-          <Button
-            type="submit"
-            className="h-14 w-full rounded-2xl bg-primary text-lg font-semibold text-primary-foreground hover:bg-primary/90"
-          >
-            Đặt hàng ngay
-          </Button>
+          {/* Cart summary */}
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-foreground">Giỏ hàng</h2>
+            <ul className="mt-4 space-y-3">
+              {items.map(item => (
+                <CheckoutLineItem key={item.cartItemId} item={item} />
+              ))}
+            </ul>
+            <div className="mt-4 flex items-center gap-2">
+              <Tag className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">
+                Mã giảm giá
+              </span>
+            </div>
+            <div className="mt-2 flex gap-2">
+              <Input
+                placeholder="Nhập mã giảm giá"
+                value={discountCode}
+                onChange={e => setDiscountCode(e.target.value)}
+                className="rounded-xl placeholder:opacity-30"
+              />
+              <Button type="button" variant="outline" className="rounded-xl">
+                Áp dụng
+              </Button>
+            </div>
+            <div className="mt-4 flex justify-between text-sm">
+              <span className="text-muted-foreground">Tạm tính:</span>
+              <span className="font-medium">{formatVND(subtotal)}</span>
+            </div>
+            <div className="mt-2 flex justify-between text-base font-semibold text-primary-bold">
+              <span>Tổng cộng:</span>
+              <span>{formatVND(total)}</span>
+            </div>
+          </section>
+
+          {/* Agreement & Submit */}
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={agreedToPolicy}
+                onChange={e => setAgreedToPolicy(e.target.checked)}
+                className="checkbox-white-check h-5 w-5 shrink-0 rounded-full border-2 border-border accent-primary cursor-pointer"
+              />
+              <span className="text-sm text-muted-foreground">
+                Tôi đã đọc kỹ thông tin sản phẩm và đồng ý với{" "}
+                <Link
+                  href={ROUTES.POLICY}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
+                >
+                  chính sách đặt hàng
+                </Link>{" "}
+                của {APP_NAME}.
+              </span>
+            </label>
+            <Button
+              type="submit"
+              variant={"default"}
+              disabled={
+                !agreedToPolicy ||
+                isSubmitting ||
+                (!!selectedPayment && !billImageDataUrl)
+              }
+              className="mt-4 h-14 w-full rounded-2xl text-lg font-semibold"
+            >
+              {isSubmitting ? "Đang xử lý..." : "Đặt hàng ngay"}
+            </Button>
+          </section>
         </form>
       </div>
     </div>
@@ -405,7 +544,9 @@ function CheckoutLineItem({ item }: { item: CartItem }) {
           <p className="text-xs text-muted-foreground">{item.variantName}</p>
         )}
       </div>
-      <p className="text-sm font-bold text-primary">{formatVND(lineTotal)}</p>
+      <p className="text-sm font-bold text-primary-bold">
+        {formatVND(lineTotal)}
+      </p>
     </li>
   );
 }

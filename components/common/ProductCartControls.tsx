@@ -21,7 +21,6 @@ export default function ProductCartControls({
   );
   const [quantity, setQuantity] = React.useState(1);
 
-  // Reset and clamp quantity when variant changes
   React.useEffect(() => {
     const stock = selectedVariant?.stock ?? product.stock ?? 0;
     setQuantity(Math.min(1, stock));
@@ -30,16 +29,18 @@ export default function ProductCartControls({
   return (
     <>
       {/* Variant selector */}
-      <div className="rounded-2xl border border-border bg-card p-5">
-        <h2 className="text-sm font-semibold text-foreground mb-3">
-          Phân loại
-        </h2>
-        <VariantSelector
-          variants={variants}
-          basePrice={basePrice}
-          onChange={setSelectedVariant}
-        />
-      </div>
+      {variants.length > 0 && (
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-3">
+            Phân loại
+          </h2>
+          <VariantSelector
+            variants={variants}
+            basePrice={basePrice}
+            onChange={setSelectedVariant}
+          />
+        </div>
+      )}
 
       {/* Add to cart */}
       <AddToCartBar

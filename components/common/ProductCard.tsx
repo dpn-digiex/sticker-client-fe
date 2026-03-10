@@ -57,7 +57,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
             className="object-cover transition-transform duration-300 ease-out group-hover/card:scale-105"
           />
           {isPreorder && (
-            <span className="absolute top-2 left-2 rounded-md bg-accent px-2 py-1 text-xs font-semibold text-foreground">
+            <span className="absolute top-2 left-2 rounded-md bg-secondary px-2 py-1 text-xs font-semibold text-foreground">
               Pre-order
             </span>
           )}
@@ -66,7 +66,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           <h2 className="text-sm font-medium text-foreground line-clamp-2">
             {name}
           </h2>
-          <p className="mt-1 text-sm font-semibold text-primary">
+          <p className="mt-1 text-sm font-semibold text-primary-bold">
             {price != null && price > 0
               ? `${price.toLocaleString("vi-VN")}₫`
               : "Liên hệ"}

@@ -1,7 +1,7 @@
 import { NavItem } from "@/types/layout";
 
 // Application constants
-export const APP_NAME = "Sticker Store";
+export const APP_NAME = "Dango's corner";
 
 // Database roles (stored in database)
 export const DB_ROLES = {
@@ -17,9 +17,9 @@ export const ROLES = {
 } as const;
 
 export const ORDER_STATUS = {
-  PENDING_PAYMENT: "pending_payment",
-  PROCESSING: "processing",
-  SHIPPED: "shipped",
+  PENDING_CONFIRMATION: "pending_confirmation",
+  PAYMENT_CONFIRMED: "payment_confirmed",
+  SHIPPING: "shipping",
   DELIVERED: "delivered",
   CANCELLED: "cancelled",
 } as const;
@@ -44,6 +44,7 @@ export const PAYMENT_METHOD = {
   BANK_TRANSFER: "bank_transfer",
   MOMO: "momo",
   ZALOPAY: "zalopay",
+  PAYPAL: "paypal",
 } as const;
 
 export const ROUTES = {
@@ -55,6 +56,7 @@ export const ROUTES = {
   PRODUCT_DETAIL: "/product/:slug",
   CART: "/cart",
   CHECKOUT: "/checkout",
+  CHECKOUT_SUCCESS: "/checkout/success",
   CAMPAIGNS: "/campaigns",
   POLICY: "/policy",
   CONTACT: "/contact",
@@ -62,6 +64,9 @@ export const ROUTES = {
   ADMIN: "/admin",
   USER: "/user",
 };
+
+/** SessionStorage key set only after order is created; success page requires it to render. */
+export const CHECKOUT_SUCCESS_SESSION_KEY = "checkout__success__session";
 
 export const NAV_ITEMS: NavItem[] = [
   { label: "Sản phẩm", href: ROUTES.PRODUCT },
@@ -79,6 +84,7 @@ export const API_ENDPOINTS = {
   CATEGORY_BY_SLUG: "/categories/slug",
   CART: "/cart",
   CHECKOUT: "/checkout",
+  ORDERS: "/orders",
   CAMPAIGNS: "/campaigns",
   POLICY: "/policy",
   CONTACT: "/contact",

@@ -9,10 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-function formatVND(amount: number) {
-  return `${amount.toLocaleString("vi-VN")}đ`;
-}
+import { formatVND } from "@/lib/utils";
 
 export default function VariantSelector({
   variants,
