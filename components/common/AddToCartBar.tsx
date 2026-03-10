@@ -90,7 +90,8 @@ export default function AddToCartBar({
       </div>
 
       <Button
-        className="mt-5 h-12 w-full rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90"
+        variant={"default"}
+        className="mt-5 h-12 w-full rounded-2xl"
         onClick={handleAddToCart}
         disabled={stock <= 0}
       >

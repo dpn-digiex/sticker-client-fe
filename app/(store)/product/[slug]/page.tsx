@@ -9,7 +9,7 @@ import { PreorderCountdown } from "@/components/common/PreorderCountdown";
 import { ProductImageSlider } from "@/components/common/ProductImageSlider";
 import { productApi } from "@/features/product/product.api";
 import { PLACEHOLDER_IMAGE, ROUTES } from "@/lib/constants";
-import { formatVND } from "@/lib/utils";
+import { formatVND, isSoldOutProduct } from "@/lib/utils";
 
 async function getRelatedProductsByCategory(
   categoryId: string | null,
@@ -18,19 +18,6 @@ async function getRelatedProductsByCategory(
   if (!categoryId) return [];
   // TODO: replace with real API when list-by-category or related endpoint exists
   return [];
-}
-
-function isPreorderExpired(p: Product) {
-  if (p.product_type !== "preorder" || !p.preorder?.end_date) return false;
-  const end = new Date(p.preorder.end_date);
-  // compare with current time (server time)
-  return end.getTime() < Date.now();
-}
-
-function isSoldOutProduct(p: Product) {
-  // in_stock with stock <= 0, or preorder expired
-  if (p.product_type === "in_stock") return (p.stock ?? 0) <= 0;
-  return isPreorderExpired(p);
 }
 
 // ✅ SEO: dynamic metadata by slug/product
@@ -260,15 +247,8 @@ export default async function ProductDetailPage({
                   Sản phẩm tạm hết hàng
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Bạn vẫn có thể xem thông tin sản phẩm phía trên. Vui lòng quay
-                  lại sau hoặc xem sản phẩm khác.
+                  Vui lòng quay lại sau hoặc xem sản phẩm khác.
                 </p>
-                <Link
-                  href={ROUTES.PRODUCT}
-                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-muted px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/80"
-                >
-                  Xem sản phẩm khác →
-                </Link>
               </div>
             ) : (
               <ProductCartControls

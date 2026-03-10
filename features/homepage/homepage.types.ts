@@ -7,6 +7,7 @@ export interface HomepageProduct {
   price: number | null;
   product_type: ProductType;
   slug: string;
+  out_of_stock: boolean;
 }
 
 export interface HomepageCategory {
