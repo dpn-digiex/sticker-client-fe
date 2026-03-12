@@ -19,8 +19,7 @@ import {
 
 import { useCartStore } from "@/stores/cart.store";
 import type { CartItem } from "@/types/cart";
-import { formatVND } from "@/stores/cart.store";
-import { cn } from "@/lib/utils";
+import { formatVND, cn } from "@/lib/utils";
 import { PLACEHOLDER_IMAGE, ROUTES } from "@/lib/constants";
 
 export function CartDrawer({
@@ -105,7 +104,7 @@ export function CartDrawer({
                 <div className="text-xl font-semibold text-foreground">
                   Tổng cộng:
                 </div>
-                <div className="text-3xl font-bold text-primary">
+                <div className="text-3xl font-bold text-primary-bold">
                   {formatVND(subtotal)}
                 </div>
               </div>
@@ -113,7 +112,8 @@ export function CartDrawer({
               <Separator className="my-4" />
 
               <Button
-                className="h-14 w-full rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90"
+                variant={"default"}
+                className="h-14 w-full rounded-2xl"
                 onClick={() => {
                   setOpen(false);
                   onCheckout?.();
@@ -190,7 +190,7 @@ function CartLineItem({
                 </p>
               )}
 
-              <p className="mt-2 text-sm font-bold text-primary">
+              <p className="mt-2 text-sm font-bold text-primary-bold">
                 {formatVND(price)}
               </p>
             </div>

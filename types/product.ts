@@ -47,3 +47,14 @@ export interface Category {
   created_at: string;
   updated_at: string;
 }
+
+/** Product shape from list/detail API */
+export type ProductCardHomepage = {
+  _id: string;
+  thumbnail: string;
+  name: string;
+  slug: string;
+  price: number | null;
+  product_type: ProductType;
+  out_of_stock: boolean;
+};

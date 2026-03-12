@@ -86,7 +86,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             key={item.href}
             href={item.href}
             onClick={onNavigate}
-            className={`nav-link ${active ? "text-primary" : ""}`}
+            className={`nav-link ${active ? "text-primary-bold" : ""}`}
           >
             {item.label}
           </Link>

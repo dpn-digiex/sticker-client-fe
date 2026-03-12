@@ -21,7 +21,7 @@ export const baloo = Baloo_2({
 });
 
 export const metadata: Metadata = {
-  title: "Sticker Store - Handmade & Collectible Products",
+  title: "Dango's Corner Sticker- Handmade & Collectible Products",
   description:
     "Order and pre-order store for handmade and collectible products",
 };

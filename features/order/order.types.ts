@@ -1,29 +1,54 @@
-import { Order, OrderItem } from "@/types/order";
-
-export interface CreateOrderData {
-  items: OrderItem[];
-  contact_info: {
+/** Payload for POST /orders - matches backend CreateOrderBody */
+export interface CreateOrderPayload {
+  contact: {
     social_link: string;
     email: string;
     phone: string;
   };
-  shipping_info: {
+  shippingInfo: {
     receiver_name: string;
     receiver_phone?: string;
     address: string;
-    notes?: string;
+    notes?: string | null;
   };
-  promotion_code?: string;
   payment: {
     plan_type: "full" | "deposit";
     method: string;
-    bill_image: string;
+    bill_image?: string | null;
   };
+  promotionId?: string | null;
+  promotionSnapshot?: Record<string, unknown> | null;
+  items: Array<{
+    productId: string;
+    variantId?: string | null;
+    quantity: number;
+  }>;
 }
 
-export interface CreateOrderResponse {
-  order: Order;
-  order_code: string;
+/** Backend service response wrapper */
+export interface ApiServiceResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  statusCode: number;
 }
 
-export type { Order, OrderItem };
+/** Order as returned from API (camelCase) */
+export interface OrderCreatedData {
+  id: string;
+  status: string;
+  createdAt: string;
+  contact: Record<string, unknown>;
+  shippingInfo: Record<string, unknown>;
+  payment: Record<string, unknown>;
+  promotionId: string | null;
+  promotionSnapshot: Record<string, unknown> | null;
+  items: Array<{
+    id: string;
+    productId: string;
+    variantId: string | null;
+    quantity: number;
+  }>;
+}
+
+export type CreateOrderResponse = ApiServiceResponse<OrderCreatedData>;
